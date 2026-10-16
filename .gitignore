@@ -1,0 +1,11 @@
+# Build products (re-create with analysis/build.sh)
+analysis/bin/
+*.o
+# ROOT ACLiC artifacts
+*_C.so
+*_C.d
+*_ACLiC_dict_rdict.pcm
+# Outputs: keep productions and analysis results outside the repository
+*.root
+*.log
+*_root.out
