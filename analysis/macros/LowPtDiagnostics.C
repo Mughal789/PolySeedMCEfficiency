@@ -27,6 +27,7 @@
 #ifndef LOWPTDIAGNOSTICS_C
 #define LOWPTDIAGNOSTICS_C
 
+#include "../src/EffTypes.h"
 #include "TrkEffConfigUtil.h"
 
 #include <TFile.h>
@@ -59,12 +60,9 @@ const std::vector<std::string> kCategoriesText = {"found", "trk:pT", "trk:eta", 
                                                   "none:>=N TPC lay", "none:1..N-1 lay", "none:0 lay"};
 
 // Particle groups (charge-combined, to have meaningful statistics with 1000 events).
-struct Group
-{
-  const char *name, *label;
-  int absPdg;
-};
-const std::vector<Group> kGroups = {{"pions", "#pi^{#pm}", 211}, {"kaons", "K^{#pm}", 321}, {"protons", "p + #bar{p}", 2212}};
+// (EffTypes.h TrackGroups)
+using Group = efftypes::Group;
+const std::vector<Group> &kGroups = efftypes::TrackGroups();
 
 // Selections, read from the TrkEffAnalysis output (TNamed "config").
 struct Cuts

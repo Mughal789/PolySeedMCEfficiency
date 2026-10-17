@@ -14,6 +14,8 @@
 #ifndef TRKEFFPLOTSTYLE_H
 #define TRKEFFPLOTSTYLE_H
 
+#include "../src/EffTypes.h"
+
 #include <TBox.h>
 #include <TCanvas.h>
 #include <TColor.h>
@@ -44,13 +46,16 @@ struct SpeciesStyle
   int marker;  // filled for positive, open for negative particles
 };
 
-// Particle / antiparticle share a colour; positive = filled, negative = open marker.
+// The identified species of EffTypes.h. Particle / antiparticle share a colour;
+// positive = filled, negative = open marker.
 inline const std::vector<SpeciesStyle> &Species()
 {
-  static const std::vector<SpeciesStyle> s = {
-      {"pip", "#pi^{+}", kAzure + 2, 20},  {"pim", "#pi^{-}", kAzure + 2, 24},
-      {"kp", "K^{+}", kRed + 1, 21},       {"km", "K^{-}", kRed + 1, 25},
-      {"p", "p", kGreen + 2, 22},          {"pbar", "#bar{p}", kGreen + 2, 26}};
+  static const std::vector<SpeciesStyle> s = []
+  {
+    std::vector<SpeciesStyle> v;
+    for (const auto *e : efftypes::MeasuredSpecies(false)) v.push_back({e->tag, e->label, e->color, e->marker});
+    return v;
+  }();
   return s;
 }
 

@@ -10,6 +10,8 @@
 // Usage:
 //   root -l -b -q 'ValidateTrkEffPlots.C+("TrkEff_baseline.root","TrkEff_baseline_summary.txt","PLOTDIR","report.log")'
 // =============================================================================
+#include "../src/EffTypes.h"
+
 #include <TEfficiency.h>
 #include <TFile.h>
 #include <TGraphAsymmErrors.h>
@@ -45,7 +47,7 @@ void Test(const std::string &n, bool ok, const std::string &m = "")
   }
 }
 bool Close(double a, double b, double tol = 1e-9) { return std::fabs(a - b) <= tol * std::max(1.0, std::fabs(b)); }
-const char *kTags[6] = {"pip", "pim", "kp", "km", "p", "pbar"};
+const std::vector<const char *> &kTags = efftypes::TrackTags();
 }  // namespace vp
 
 void ValidateTrkEffPlots(const char *trkEffFile, const char *step2Summary, const char *plotDir, const char *report)
@@ -207,8 +209,9 @@ void ValidateTrkEffPlots(const char *trkEffFile, const char *step2Summary, const
     std::ifstream in(Form("%s/LowPtDiagnostics.txt", plotDir));
     if (in)
     {
-      const std::map<std::string, std::vector<std::string>> groups = {
-          {"pions", {"pip", "pim"}}, {"kaons", {"kp", "km"}}, {"protons", {"p", "pbar"}}};
+      std::map<std::string, std::vector<std::string>> groups;
+      for (const auto &g : efftypes::TrackGroups())
+        groups[g.name] = {efftypes::AllSpecies()[g.sPos].tag, efftypes::AllSpecies()[g.sNeg].tag};
       std::string line, group;
       int bin = 0;
       while (std::getline(in, line))

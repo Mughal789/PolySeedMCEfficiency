@@ -111,6 +111,33 @@ inline std::vector<const Species *> MeasuredSpecies(bool withHadrons)
   return v;
 }
 
+// tags of the identified species (kTrack), in table order: pip pim kp km p pbar
+inline const std::vector<const char *> &TrackTags()
+{
+  static const std::vector<const char *> v = []
+  {
+    std::vector<const char *> out;
+    for (const auto *s : MeasuredSpecies(false)) out.push_back(s->tag);
+    return out;
+  }();
+  return v;
+}
+
+// particle + antiparticle groups of the identified species (charge-combined plots and tables)
+struct Group
+{
+  const char *name, *label;
+  int absPdg;
+  int sPos, sNeg;  // SpeciesIndex of the positive and negative member
+};
+inline const std::vector<Group> &TrackGroups()
+{
+  static const std::vector<Group> g = {{"pions", "#pi^{#pm}", 211, iPip, iPim},
+                                       {"kaons", "K^{#pm}", 321, iKp, iKm},
+                                       {"protons", "p + #bar{p}", 2212, iP, iPbar}};
+  return g;
+}
+
 inline const Species *FindByTag(const char *tag)
 {
   for (const auto &s : AllSpecies())

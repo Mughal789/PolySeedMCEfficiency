@@ -23,6 +23,8 @@
 //   FINALDIR    output directory of run_trkeff_final.sh
 //   VARIANTSDIR Step-4A variants directory of the same sample
 // =============================================================================
+#include "../src/EffTypes.h"
+
 #include <TFile.h>
 #include <TH2D.h>
 #include <TNamed.h>
@@ -48,7 +50,7 @@ void Check(bool ok, const std::string &what)
   if (!ok) ++gFail;
   Out(std::string(ok ? "PASS  " : "FAIL  ") + what);
 }
-const char *kSp[6] = {"pip", "pim", "kp", "km", "p", "pbar"};
+const std::vector<const char *> &kSp = efftypes::TrackTags();
 
 TH2D *Get(TFile &f, const char *kind, const char *sp)
 {
@@ -178,8 +180,9 @@ void ValidateFinalTrkEff(const char *finalDir, const char *variantsDir, const ch
       const char *sp;
       double ylo, yhi, plo, phi;
     };
-    const Win wins[] = {{"pip", -1.0, 1.0, 0.1, 99}, {"pim", -1.0, 1.0, 0.1, 99}, {"kp", -0.7, 0.7, 0.1, 0.6},
-                        {"km", -0.7, 0.7, 0.1, 0.6},  {"p", -0.6, 0.6, 0.4, 1.0},  {"pbar", -0.6, 0.6, 0.4, 1.0}};
+    std::vector<Win> wins;  // EffTypes.h windows: |y| < absMax, ptMin <= pT < ptAnaMax (else the last map edge)
+    for (const auto *e : efftypes::MeasuredSpecies(false))
+      wins.push_back({e->tag, -e->absMax, e->absMax, e->ptMin, e->ptAnaMax < 50 ? e->ptAnaMax : e->pt.back()});
     for (const auto &w : wins)
     {
       const Eff e = Integrated(*fin, w.sp, w.ylo, w.yhi, w.plo, w.phi);

@@ -14,6 +14,7 @@
 //     merged.root  optional: hadd of TrkEffAnalysis runs on split input lists;
 //                  must be identical to TrkEff.root ("" = skip)
 // =============================================================================
+#include "../src/EffTypes.h"
 #include "TrkEffConfigUtil.h"
 
 #include <TDatabasePDG.h>
@@ -125,14 +126,21 @@ void ValidateTrkEff(const char *evalList, const char *trkEffFile, const char *re
              knintt, kdcaxy, kdcaz));
   Test("C DCA cuts only together with a reconstructed vertex", !dcaCut || useReco);
 
-  const int pdgs[6] = {211, -211, 321, -321, 2212, -2212};
-  const char *tags[6] = {"pip", "pim", "kp", "km", "p", "pbar"};
-  const int charges[6] = {1, -1, 1, -1, 1, -1};
+  // the identified species of EffTypes.h
+  std::vector<int> pdgs, charges;
+  std::vector<const char *> tags;
+  for (const auto *e : efftypes::MeasuredSpecies(false))
+  {
+    pdgs.push_back(e->pdg);
+    tags.push_back(e->tag);
+    charges.push_back(e->charge);
+  }
+  const int NS = static_cast<int>(pdgs.size());
   std::map<int, int> idx;
-  for (int s = 0; s < 6; ++s) idx[pdgs[s]] = s;
+  for (int s = 0; s < NS; ++s) idx[pdgs[s]] = s;
   // independent reference histograms (same binning)
   std::vector<TH2D *> rD, rN, rQ;
-  for (int s = 0; s < 6; ++s)
+  for (int s = 0; s < NS; ++s)
   {
     rD.push_back(new TH2D(Form("rD_%s", tags[s]), "", ye.size() - 1, ye.data(), pe.size() - 1, pe.data()));
     rN.push_back(new TH2D(Form("rN_%s", tags[s]), "", ye.size() - 1, ye.data(), pe.size() - 1, pe.data()));
@@ -309,7 +317,7 @@ void ValidateTrkEff(const char *evalList, const char *trkEffFile, const char *re
        statOf("found (any charge)") == nUniqueFound, Form("%g vs %ld", statOf("found (any charge)"), nUniqueFound));
   long nEmpty = 0, nBins = 0;
   double nOverflowMissing = 0;
-  for (int s = 0; s < 6; ++s)
+  for (int s = 0; s < NS; ++s)
   {
     TH2D *hD = (TH2D *)R->Get(Form("hDen_%s_ypt", tags[s])), *hN = (TH2D *)R->Get(Form("hNum_%s_ypt", tags[s])),
          *hQ = (TH2D *)R->Get(Form("hNumQ_%s_ypt", tags[s]));
@@ -379,7 +387,7 @@ void ValidateTrkEff(const char *evalList, const char *trkEffFile, const char *re
     long undefLines = 0, expected = 0;
     while (std::getline(sf, line))
       if (line.find("eps undefined") != std::string::npos) undefLines++;
-    for (int s = 0; s < 6; ++s)
+    for (int s = 0; s < NS; ++s)
     {
       TH1D *dPt = (TH1D *)R->Get(Form("hDen_%s_pt", tags[s]));
       for (int b = 1; b <= dPt->GetNbinsX(); ++b) expected += dPt->GetBinContent(b) == 0;
@@ -435,7 +443,7 @@ void ValidateTrkEff(const char *evalList, const char *trkEffFile, const char *re
   if (nOverflowMissing > 0)
     Log(Form("  truth eta cut off: %.0f true particles in under/overflow (y beyond the binning) are not in the skim (by design)",
              nOverflowMissing));
-  for (int s = 0; s < 6; ++s)
+  for (int s = 0; s < NS; ++s)
     Log(Form("  %-5s D %6.0f  N %6.0f  NQ %6.0f   (evaluator recomputation)", tags[s], rD[s]->GetEntries(),
              rN[s]->GetEntries(), rQ[s]->GetEntries()));
   Log("");

@@ -21,6 +21,8 @@
 // Usage:
 //   root -l -b -q 'ValidateTrkEffVariants.C+("VARIANTDIR","Step2_TrkEff_baseline.root","report.log"[,"PLOTDIR"])'
 // =============================================================================
+#include "../src/EffTypes.h"
+
 #include <TEfficiency.h>
 #include <TFile.h>
 #include <TGraphAsymmErrors.h>
@@ -58,7 +60,7 @@ void Test(const std::string &n, bool ok, const std::string &m = "")
     if (!gFirst.count(n)) gFirst[n] = m;
   }
 }
-const char *kTags[6] = {"pip", "pim", "kp", "km", "p", "pbar"};
+const std::vector<const char *> &kTags = efftypes::TrackTags();
 const int kMvtx[3] = {0, 2, 3};
 const char *kZ[2] = {"ztrue", "zreco"};
 const char *kDen[2] = {"incl", "track"};
