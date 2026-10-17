@@ -3,7 +3,7 @@
 // (analysis/TRKEFF.md, "Final selection") on the outputs written by run_trkeff_final.sh
 //
 //  A. one-cut steps on the fine grid, reco vertex, no truth-eta cut:
-//       step0  TPC >= 18, MVTX >= 3
+//       step0  TPC >= 18, MVTX >= 2
 //       step1  + TPC >= 20
 //       step2  + INTT >= 1
 //       step3  + |DCA_xy|, |DCA_z| <= 1.5 cm   (= FINAL)
@@ -92,7 +92,7 @@ void ValidateFinalTrkEff(const char *finalDir, const char *variantsDir, const ch
   // ---- A. one-cut steps --------------------------------------------------------
   std::vector<std::unique_ptr<TFile>> step;
   for (int s = 0; s <= 3; ++s) step.emplace_back(TFile::Open((F + Form("/TrkEff_step%d.root", s)).c_str()));
-  std::unique_ptr<TFile> fin(TFile::Open((F + "/TrkEff_final_mvtx3.root").c_str()));
+  std::unique_ptr<TFile> fin(TFile::Open((F + "/TrkEff_final.root").c_str()));
   bool filesOk = fin && !fin->IsZombie();
   for (auto &f : step) filesOk = filesOk && f && !f->IsZombie();
   Check(filesOk, "A0 step0..step3 and FINAL outputs present");
@@ -169,7 +169,7 @@ void ValidateFinalTrkEff(const char *finalDir, const char *variantsDir, const ch
     Out("    true-z MVTX2 -> MVTX3      : isolated track-level cost of the third MVTX cluster (no vertex condition)");
     Out("    true-z -> reco-z           : effect of conditioning on the MVTX>=3-based final vertex");
     Out("    reco-z MVTX2 -> MVTX3      : the same track-level cost inside the vertexed sample");
-    Out("    reco-z MVTX3 -> FINAL same : extra numerator cuts TPC 20, INTT 1, DCA 1.5 cm");
+    Out("    reco-z MVTX2 -> FINAL same : extra numerator cuts TPC 20, INTT 1, DCA 1.5 cm");
     Out(std::string("    FINAL same -> this output   : phase space (") + fin->Get<TNamed>("selection")->GetTitle() + "; |y| < 1); not a track-quality effect");
     Out("");
     Out("  FINAL, all species in their analysis windows (true y, true pT):");

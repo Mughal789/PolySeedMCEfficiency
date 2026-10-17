@@ -1,9 +1,10 @@
 // =============================================================================
 // MakeFinalTrkEffMaps.C - per-species tracking-efficiency maps in the analysis
 // windows, from the fine-grid raw counts of a TrkEffAnalysis output
-// (config/trkeff_final_mvtx3.cfg), plus the Corral hook format and plots.
+// (config/trkeff.cfg), plus the Corral hook format and plots.
 //
-// Species windows (true y, true pT) and map binning (subsets of the fine grid):
+// Species windows (true y, true pT) and map binning (subsets of the fine grid),
+// from src/EffTypes.h:
 //   pi+-  : |y| < 1.0 in 0.2 steps;  pT 0.10 ... 5.00 GeV/c (14 bins)
 //   K+-   : |y| < 0.7 (-0.7,-0.4,0,0.4,0.7); pT 0.1-0.6 in 0.1 steps; the bin
 //           0.6-1.0 is a QA bin (the dE/dx PID of the analysis stops at p = 0.6)
@@ -20,13 +21,14 @@
 //                                                  CP half-intervals; content = -1 where D = 0
 //   heffpty_<sp>_errlo, heffpty_<sp>_errhi         CP lower / upper half-intervals
 //   window_<sp>, selection, source                 TNamed
-// Optional reference (e.g. the same selection with MVTX >= 2): its maps are
+// Optional reference (e.g. the same selection with MVTX >= 3): its maps are
 // written with the suffix _ref and compared on the plots.
 // Checks (OUTDIR/maps_validation.log): edges on the fine grid; rebinned sums
 // equal the fine-bin sums in the window; hook content = passed/total; NQ <= N <= D.
 //
-// Usage: root -l -b -q 'MakeFinalTrkEffMaps.C+("TrkEff_final_mvtx3.root","OUTDIR","label"[,"ref.root","ref label"])'
+// Usage: root -l -b -q 'MakeFinalTrkEffMaps.C+("TrkEff_final.root","OUTDIR","label"[,"ref.root","ref label"])'
 // =============================================================================
+#include "../src/EffTypes.h"
 #include "TrkEffPlotStyle.h"
 
 #include <TCanvas.h>
@@ -54,21 +56,16 @@ struct SpeciesWindow
   int color, marker;
   double ptAnaMax = 99;  // integrated numbers use pT < ptAnaMax (kaons: QA bin above 0.6 excluded)
 };
+// the identified species of EffTypes.h (kTrack), in its order: pi+ pi- K+ K- p pbar
 const std::vector<SpeciesWindow> &Windows()
 {
-  static const std::vector<SpeciesWindow> w = {
-      {"pip", "#pi^{+}", "|y| < 1.0, pT >= 0.1 GeV/c", {-1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0},
-       {0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.80, 1.00, 1.25, 1.50, 2.00, 3.00, 5.00}, kAzure + 2, 20},
-      {"pim", "#pi^{-}", "|y| < 1.0, pT >= 0.1 GeV/c", {-1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0},
-       {0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.80, 1.00, 1.25, 1.50, 2.00, 3.00, 5.00}, kAzure + 2, 24},
-      {"kp", "K^{+}", "|y| < 0.7, 0.1 <= pT < 0.6 GeV/c (0.6-1.0: QA bin)", {-0.7, -0.4, 0.0, 0.4, 0.7},
-       {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.0}, kRed + 1, 21, 0.6},
-      {"km", "K^{-}", "|y| < 0.7, 0.1 <= pT < 0.6 GeV/c (0.6-1.0: QA bin)", {-0.7, -0.4, 0.0, 0.4, 0.7},
-       {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.0}, kRed + 1, 25, 0.6},
-      {"p", "p", "|y| < 0.6, 0.4 <= pT < 1.0 GeV/c", {-0.6, -0.3, 0.0, 0.3, 0.6}, {0.4, 0.5, 0.6, 0.7, 0.8, 1.0},
-       kGreen + 2, 22},
-      {"pbar", "#bar{p}", "|y| < 0.6, 0.4 <= pT < 1.0 GeV/c", {-0.6, -0.3, 0.0, 0.3, 0.6}, {0.4, 0.5, 0.6, 0.7, 0.8, 1.0},
-       kGreen + 2, 26}};
+  static const std::vector<SpeciesWindow> w = []
+  {
+    std::vector<SpeciesWindow> v;
+    for (const auto *s : efftypes::MeasuredSpecies(false))
+      v.push_back({s->tag, s->label, s->text, s->y, s->pt, s->color, s->marker, s->ptAnaMax});
+    return v;
+  }();
   return w;
 }
 
