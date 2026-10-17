@@ -90,6 +90,7 @@
 // Build: analysis/build.sh
 // =============================================================================
 
+#include "EffTypes.h"
 #include "EvalCommon.h"
 
 #include <TEfficiency.h>
@@ -109,7 +110,7 @@ using namespace evalcommon;
 
 namespace
 {
-const char *kVersion = "TrkEffAnalysis v3 (2026-10-15)";  // v2: optional INTT and DCA cuts; v3: use_truth_eta_cut switch
+const char *kVersion = "TrkEffAnalysis v4 (2026-10-16)";  // v2: optional INTT and DCA cuts; v3: use_truth_eta_cut switch; v4: species from EffTypes.h
 
 // -----------------------------------------------------------------------------
 // Particle species
@@ -122,9 +123,17 @@ struct Species
   int charge;         // electric charge in units of e
 };
 
-const std::vector<Species> kKnownSpecies = {
-    {211, "pip", "#pi^{+}", +1},  {-211, "pim", "#pi^{-}", -1}, {321, "kp", "K^{+}", +1},
-    {-321, "km", "K^{-}", -1},    {2212, "p", "p", +1},         {-2212, "pbar", "#bar{p}", -1}};
+// the identified species of EffTypes.h (kTrack)
+const std::vector<Species> &KnownSpecies()
+{
+  static const std::vector<Species> v = []
+  {
+    std::vector<Species> out;
+    for (const auto *s : efftypes::MeasuredSpecies(false)) out.push_back({s->pdg, s->tag, s->label, s->charge});
+    return out;
+  }();
+  return v;
+}
 
 // -----------------------------------------------------------------------------
 // Configuration
@@ -267,7 +276,7 @@ TrkEffConfig ReadTrkEffConfig(const std::string &path, const std::vector<std::st
   for (double pdg : ParseNumberList(k.Str("species"), "species"))
   {
     bool found = false;
-    for (const auto &s : kKnownSpecies)
+    for (const auto &s : KnownSpecies())
       if (s.pdg == static_cast<int>(std::lround(pdg)))
       {
         c.species.push_back(s);
@@ -275,7 +284,9 @@ TrkEffConfig ReadTrkEffConfig(const std::string &path, const std::vector<std::st
       }
     if (!found)
     {
-      std::cerr << "FATAL: species " << pdg << " not supported (supported: +-211, +-321, +-2212)" << std::endl;
+      std::cerr << "FATAL: species " << pdg << " not supported (supported:";
+      for (const auto &s : KnownSpecies()) std::cerr << " " << s.pdg;
+      std::cerr << ")" << std::endl;
       std::exit(1);
     }
   }
